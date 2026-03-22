@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// תיקון למערכת האייקונים של Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -12,6 +11,9 @@ L.Icon.Default.mergeOptions({
 });
 
 const PLACEHOLDER_IMG = "https://images.placeholders.dev/?width=400&height=250&text=No%20Image&bgColor=%23f1f5f9&textColor=%2394a3b8";
+
+// הכתובת של השרת שלך בענן
+const API_URL = "https://dirot-g4rs.onrender.com";
 
 function App() {
     const [properties, setProperties] = useState([]);
@@ -26,7 +28,7 @@ function App() {
 
     const fetchData = useCallback(async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/properties');
+            const res = await fetch(`${API_URL}/api/properties`);
             if (!res.ok) throw new Error("Server Error");
             const data = await res.json();
             setProperties(Array.isArray(data) ? data : []);
@@ -57,20 +59,20 @@ function App() {
     const startScrape = async () => {
         setLoading(true);
         try {
-            await fetch('http://localhost:5000/api/run-scrape');
-            const interval = setInterval(fetchData, 8000);
+            await fetch(`${API_URL}/api/run-scrape`);
+            const interval = setInterval(fetchData, 10000);
             setTimeout(() => { clearInterval(interval); setLoading(false); }, 120000);
         } catch (err) {
-            alert("השרת לא זמין. וודא ש- node server/index.js פועל.");
+            alert("השרת לא מגיב. ודא שהוא מופעל ואין שגיאות.");
             setLoading(false);
         }
     };
 
     const getMarkerIcon = (price, source) => {
-        let color = '#ef4444'; // מעל הממוצע
-        if (source === 'Kones') color = '#eab308'; // כונס (כתום)
+        let color = '#ef4444'; // מעל הממוצע (אדום)
+        if (source === 'Kones') color = '#eab308'; // כונס (כתום-צהוב)
         else if (price > 0 && price < AVG_PRICE_ASHKELON) color = '#22c55e'; // מתחת לממוצע (ירוק)
-
+        
         return new L.DivIcon({
             className: 'custom-marker',
             html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
@@ -90,7 +92,7 @@ function App() {
         <div style={{ direction: 'rtl', padding: '20px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', textAlign: 'right' }}>
             {serverError && (
                 <div style={{ background: '#fef2f2', color: '#991b1b', padding: '10px', borderRadius: '10px', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold', border: '1px solid #f87171' }}>
-                    שגיאת תקשורת: השרת סגור או קרס. אנא הפעל מחדש (node server/index.js).
+                    שגיאת תקשורת: השרת לא מגיב. ודא שהאפליקציה פועלת ב-Render.
                 </div>
             )}
 
@@ -166,7 +168,7 @@ function App() {
                 </div>
             )}
 
-            {/* Modal חלון פרטים */}
+            {/* Modal - חלון פרטי נכס */}
             {selectedAd && (
                 <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.9)', zIndex: 4000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedAd(null)}>
                     <div style={{ backgroundColor: 'white', borderRadius: '24px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '30px' }} onClick={e => e.stopPropagation()}>
@@ -177,11 +179,11 @@ function App() {
 
                         <div style={{ display: 'flex', gap: '15px', margin: '20px 0' }}>
                             <button onClick={() => window.open(`https://wa.me/972${selectedAd.phone?.replace(/\D/g,'')}?text=שלום, אני פונה לגבי ${selectedAd.source==='Kones'?'המכרז':'הדירה'} ב${selectedAd.address}`)}
-                                    style={{ flex: 1, padding: '15px', backgroundColor: '#25d366', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>WhatsApp 📱</button>
-                            <div style={{ flex: 1, background: '#f8fafc', padding: '15px', borderRadius: '12px', textAlign: 'center', fontWeight: 'bold', border: '1px solid #e2e8f0' }}>📞 {selectedAd.phone || 'באתר המקור'}</div>
+                                    style={{ flex: 1, padding: '15px', backgroundColor: '#25d366', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }}>WhatsApp 📱</button>
+                            <div style={{ flex: 1, background: '#f8fafc', padding: '15px', borderRadius: '12px', textAlign: 'center', fontWeight: 'bold', border: '1px solid #e2e8f0', fontSize: '1.1rem' }}>📞 {selectedAd.phone || 'אין טלפון'}</div>
                         </div>
 
-                        <p style={{ lineHeight: '1.6', background: '#f1f5f9', padding: '15px', borderRadius: '12px', fontWeight: selectedAd.source === 'Kones' ? 'bold' : 'normal' }}>{selectedAd.description}</p>
+                        <p style={{ lineHeight: '1.6', background: '#f1f5f9', padding: '15px', borderRadius: '12px', fontWeight: selectedAd.source === 'Kones' ? 'bold' : 'normal', whiteSpace: 'pre-wrap' }}>{selectedAd.description}</p>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
                             {(() => {
