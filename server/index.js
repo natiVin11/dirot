@@ -7,7 +7,6 @@ const cors = require('cors');
 puppeteer.use(StealthPlugin());
 const app = express();
 
-// מאפשר לכל אתר (ול-Frontend שלך) לגשת למידע
 app.use(cors());
 
 const db = new sqlite3.Database('./properties.db');
@@ -35,7 +34,7 @@ const checkRenewal = (text) => {
     return streets.some(s => text?.includes(s)) ? "✅ פינוי בינוי" : "רגיל";
 };
 
-// Geocoding
+// הפיכת כתובת לקואורדינטות (Geocoding)
 async function getCoordinates(address) {
     try {
         let cleanAddress = address.replace('באשקלון', '').replace("רח'", "").trim();
@@ -64,7 +63,7 @@ async function scrapeYad2(page) {
         await delay(5000);
 
         const adLinks = await page.evaluate(() => {
-            return Array.from(document.querySelectorAll('a[href*="/item/"]')).map(a => a.href).filter((v, i, a) => a.indexOf(v) === i);
+            return Array.from(document.querySelectorAll('a[href*="/item/"]')).map(a => a.href).filter((v, i, arr) => arr.indexOf(v) === i);
         });
 
         const results = [];
@@ -204,7 +203,6 @@ async function scrapeKones(page) {
 // מנוע הסריקה הראשי
 async function runMasterScraper() {
     console.log("🚀 מתחיל סריקה כוללת בענן...");
-    // הגדרות קריטיות לריצה על שרתי Render החינמיים!
     const browser = await puppeteer.launch({
         headless: true, 
         args: [
@@ -220,7 +218,6 @@ async function runMasterScraper() {
     try {
         const page = await browser.newPage();
         
-        // חוסם טעינת פרסומות ופונטים כדי לחסוך בזיכרון של השרת
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             if(['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())){
@@ -239,7 +236,7 @@ async function runMasterScraper() {
 
         const stmt = db.prepare(`INSERT OR REPLACE INTO houses (id, address, description, price, phone, images, source, urban_renewal, lat, lon, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`);
 
-        console.log("משלים נתוני מיקום חסרים...");
+        console.log("מעדכן מסד נתונים ומושך מיקומים...");
         for (const h of results) {
             if (h.address && h.address.trim() !== "") {
                 let finalLat = h.lat;
@@ -265,7 +262,16 @@ async function runMasterScraper() {
     }
 }
 
-// ניתובים של ה-API
+// נתיב ראשי (כדי שלא תראה שגיאת Cannot GET /)
+app.get('/', (req, res) => {
+    res.send(`
+        <div style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;" dir="rtl">
+            <h1 style="color: #2563eb;">מנוע ציד הנדל"ן פועל בהצלחה! 🚀</h1>
+            <p>השרת מחובר ומוכן לקבל פקודות מאתר ה-Frontend שלך.</p>
+        </div>
+    `);
+});
+
 app.get('/api/run-scrape', (req, res) => { 
     runMasterScraper(); 
     res.json({ message: "Started background scraping on Render" }); 
@@ -278,6 +284,5 @@ app.get('/api/properties', (req, res) => {
     }); 
 });
 
-// שימוש בפורט הדינמי ש-Render מקצה לנו (או 5000 ברירת מחדל בבית)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Backend is running on port ${PORT}`));
