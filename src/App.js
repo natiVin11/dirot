@@ -12,7 +12,6 @@ L.Icon.Default.mergeOptions({
 
 const PLACEHOLDER_IMG = "https://images.placeholders.dev/?width=400&height=250&text=No%20Image&bgColor=%23f1f5f9&textColor=%2394a3b8";
 
-// הכתובת של השרת שלך בענן
 const API_URL = "https://dirot-g4rs.onrender.com";
 
 function App() {
