@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+// תיקון למערכת האייקונים של Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -12,6 +13,7 @@ L.Icon.Default.mergeOptions({
 
 const PLACEHOLDER_IMG = "https://images.placeholders.dev/?width=400&height=250&text=No%20Image&bgColor=%23f1f5f9&textColor=%2394a3b8";
 
+// הכתובת של השרת שלך בענן
 const API_URL = "https://dirot-g4rs.onrender.com";
 
 function App() {
@@ -38,7 +40,9 @@ function App() {
         }
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useEffect(() => { 
+        fetchData(); 
+    }, [fetchData]);
 
     const filteredProperties = useMemo(() => {
         return properties.filter(p =>
@@ -60,7 +64,10 @@ function App() {
         try {
             await fetch(`${API_URL}/api/run-scrape`);
             const interval = setInterval(fetchData, 10000);
-            setTimeout(() => { clearInterval(interval); setLoading(false); }, 120000);
+            setTimeout(() => { 
+                clearInterval(interval); 
+                setLoading(false); 
+            }, 120000);
         } catch (err) {
             alert("השרת לא מגיב. ודא שהוא מופעל ואין שגיאות.");
             setLoading(false);
@@ -126,7 +133,7 @@ function App() {
 
                         return (
                             <div key={p.id} onClick={() => setSelectedAd(p)} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', cursor: 'pointer', border: '1px solid #e2e8f0' }}>
-                                <img src={mainImg} style={{ width: '100%', height: '180px', objectFit: 'cover' }} alt="דירה" onError={handleImgError} />
+                                <img src={mainImg} style={{ width: '100%', height: '180px', objectFit: 'cover' }} alt="תמונת נכס" onError={handleImgError} />
                                 <div style={{ padding: '15px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '5px' }}>
                                         <span style={{ background: p.source === 'Kones' ? '#fef3c7' : '#eff6ff', color: p.source === 'Kones' ? '#b45309' : '#2563eb', padding: '2px 8px', borderRadius: '5px' }}>{p.source}</span>
@@ -188,7 +195,7 @@ function App() {
                             {(() => {
                                 try {
                                     const imgs = selectedAd.images ? JSON.parse(selectedAd.images) : [];
-                                    return imgs.map((img, i) => img && <img key={i} src={img} style={{ width: '100%', borderRadius: '12px' }} onError={handleImgError} />);
+                                    return imgs.map((img, i) => img && <img key={i} src={img} alt={`תמונה ${i}`} style={{ width: '100%', borderRadius: '12px' }} onError={handleImgError} />);
                                 } catch(e) { return null; }
                             })()}
                         </div>
