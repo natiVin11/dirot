@@ -44,10 +44,10 @@ async function getCoordinates(address) {
 
         const query = encodeURIComponent(cleanAddress + ", אשקלון, ישראל");
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
-        
+
         const response = await fetch(url, { headers: { 'User-Agent': 'AshkelonRealEstateBot/1.0' } });
         const data = await response.json();
-        
+
         if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
     } catch (e) {
         console.error("Geocoding failed for:", address);
@@ -71,7 +71,7 @@ async function scrapeYad2(page) {
             try {
                 await page.goto(link, { waitUntil: 'networkidle2', timeout: 60000 });
                 await delay(3000);
-                
+
                 let phone = "באתר";
                 try {
                     const phoneBtn = await page.$('[data-testid="show-ad-contacts-button"], [data-testid="contact-button"]');
@@ -167,7 +167,7 @@ async function scrapeKones(page) {
         await page.goto('https://www.konesonline.co.il/boards/asset?CityId=75', { waitUntil: 'domcontentloaded', timeout: 45000 });
         await page.waitForSelector('.tender_item', { timeout: 10000 }).catch(() => {});
         await delay(2000);
-        
+
         return await page.evaluate(() => {
             const items = document.querySelectorAll('.tender_item');
             const results = [];
@@ -175,7 +175,7 @@ async function scrapeKones(page) {
                 const titleEl = item.querySelector('.title');
                 const dateEl = item.querySelector('.date');
                 const imgEl = item.querySelector('.image_conti');
-                
+
                 if (titleEl) {
                     let address = titleEl.innerText.trim();
                     let desc = dateEl ? `מועד סיום מכרז: ${dateEl.innerText.trim()}` : "מכרז כונס";
@@ -196,7 +196,7 @@ async function scrapeKones(page) {
         });
     } catch (error) {
         console.log("כונס אונליין לא זמין כרגע. ממשיך הלאה...");
-        return []; 
+        return [];
     }
 }
 
@@ -204,9 +204,9 @@ async function scrapeKones(page) {
 async function runMasterScraper() {
     console.log("🚀 מתחיל סריקה כוללת בענן...");
     const browser = await puppeteer.launch({
-        headless: true, 
+        headless: true,
         args: [
-            '--no-sandbox', 
+            '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
@@ -214,10 +214,10 @@ async function runMasterScraper() {
             '--no-zygote'
         ]
     });
-    
+
     try {
         const page = await browser.newPage();
-        
+
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             if(['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())){
@@ -241,7 +241,7 @@ async function runMasterScraper() {
             if (h.address && h.address.trim() !== "") {
                 let finalLat = h.lat;
                 let finalLon = h.lon;
-                
+
                 if (!finalLat || !finalLon) {
                     const coords = await getCoordinates(h.address);
                     finalLat = coords.lat;
@@ -255,8 +255,8 @@ async function runMasterScraper() {
         }
         stmt.finalize();
         console.log("✅ הסריקה הסתיימה בהצלחה והנתונים נשמרו!");
-    } catch (e) { 
-        console.error("שגיאה במנוע הראשי:", e); 
+    } catch (e) {
+        console.error("שגיאה במנוע הראשי:", e);
     } finally {
         await browser.close();
     }
@@ -272,16 +272,16 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.get('/api/run-scrape', (req, res) => { 
-    runMasterScraper(); 
-    res.json({ message: "Started background scraping on Render" }); 
+app.get('/api/run-scrape', (req, res) => {
+    runMasterScraper();
+    res.json({ message: "Started background scraping on Render" });
 });
 
-app.get('/api/properties', (req, res) => { 
+app.get('/api/properties', (req, res) => {
     db.all("SELECT * FROM houses ORDER BY last_seen DESC", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []); 
-    }); 
+        res.json(rows || []);
+    });
 });
 
 const PORT = process.env.PORT || 5000;
